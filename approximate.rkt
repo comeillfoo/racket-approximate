@@ -70,3 +70,21 @@
      [a (exp B)]
      [b A])
     (lambda (x) (* a (expt x b)))))
+
+
+(define (segment xs ys)
+  (let*
+    ([left-bound (apply min xs)]
+     [right-bound (apply max xs)])
+    (lambda (x)
+      (if (or (< x left-bound) (> x right-bound))
+        (raise-argument-error 'f (format "between ~a and ~a" left-bound right-bound) x)
+        (let*
+          ([x0
+            (argmin
+              (lambda (maybe-x) (- x maybe-x))
+              (filter-not (lambda (arg) (> arg x)) xs))]
+           [y0 (list-ref ys (index-of xs x0))]
+           [x1 (second (member x0 xs))]
+           [y1 (list-ref ys (index-of xs x1))])
+          (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0))))))))

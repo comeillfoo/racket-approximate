@@ -1,15 +1,23 @@
 #lang racket
 
+
+;; Code here
 (require math/array)
 (require math/matrix)
 
-(define (read-csv-to-strings)
-  (for/list ([xy (in-lines (current-input-port))])
-    (string-split xy ";" #:trim? #t #:repeat? 2)))
+
+(require racket/generator)
 
 
-(define (csv-function-tabulate csv)
-  (map (lambda (xy) (cons (string->number (first xy)) (string->number (second xy)))) csv))
+(define table
+  (generator ()
+    (for
+      ([line (in-lines)])
+      (let ([xy (string-split line ";" #:trim? #t #:repeat? 2)])
+        (yield
+          (cons
+            (string->number (first xy))
+            (string->number (second xy))))))))
 
 
 (define (linear-coefficients N SX SXX SY SXY)
@@ -88,3 +96,76 @@
            [x1 (second (member x0 xs))]
            [y1 (list-ref ys (index-of xs x1))])
           (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0))))))))
+
+
+(require racket/cmdline)
+
+(define linear-enabled (make-parameter #f))
+(define quad-enabled (make-parameter #f))
+(define exp-enabled (make-parameter #f))
+(define log-enabled (make-parameter #f))
+(define pow-enabled (make-parameter #f))
+(define seg-enabled (make-parameter #f))
+(define start (make-parameter 0))
+(define step (make-parameter 1))
+(define frequency (make-parameter 1))
+
+(command-line
+  #:program "approximate"
+  #:once-each
+  [("-l" "--linear") "Use linear approximation"
+                      (linear-enabled #t)]
+  [("-q" "--quadratic") "Use quadratic approximation"
+                        (quad-enabled #t)]
+  [("-e" "--exponent") "Use exponential approximation"
+                      (exp-enabled #t)]
+  [("-g" "--logarithm") "Use logarithmic approximation"
+                        (log-enabled #t)]
+  [("-p" "--power") "Use power approximation"
+                    (pow-enabled #t)]
+  [("-s" "--segment") "Use segment approximation"
+                      (seg-enabled #t)]
+  [("--step") raw-step "Step between yielded X, default 1"
+                        (step (string->number raw-step))]
+  [("-f" "--frequency") raw-freq "the number of generated X, default 1"
+                                 (frequency (string->number 1))]
+  [("--start") raw-start "Starting X, default 0"
+                          (start (string->number raw-start))]
+  #:args () (void))
+
+
+(define (print-header)
+  (printf "x")
+  (when (linear-enabled) (printf ";linear"))
+  (when (quad-enabled)   (printf ";quadratic"))
+  (when (exp-enabled)    (printf ";exponent"))
+  (when (log-enabled)    (printf ";logarithm"))
+  (when (pow-enabled)    (printf ";power"))
+  (when (seg-enabled)    (printf ";segment"))
+  (newline))
+
+
+(module+ test
+  (require rackunit)
+  ;; tests
+  (check-equal? 1 1))
+
+
+(module+ main
+  (print-header)
+  (for/fold
+    ([function null] #:result (void))
+    ([xy (in-producer table (void))])
+    (let*
+      ([N (length function)]
+       [x (car xy)]
+       [y (cdr xy)])
+      (printf "~a" x)
+      (when (linear-enabled) (printf ";~a" y))
+      (when (quad-enabled)   (printf ";~a" y))
+      (when (exp-enabled)    (printf ";~a" y))
+      (when (log-enabled)    (printf ";~a" y))
+      (when (pow-enabled)    (printf ";~a" y))
+      (when (seg-enabled)    (printf ";~a" y))
+      (newline)
+      (append function (list xy)))))

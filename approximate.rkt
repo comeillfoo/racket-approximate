@@ -23,43 +23,49 @@
 (define (linear-coefficients N SX SXX SY SXY)
   (let*
     ([delta (lambda (arg1 arg2 arg3 arg4) (- (* arg1 arg2) (* arg3 arg4)))]
-     [delta0 (delta SXX N SX SX)]
-     [delta1 (delta SXY N SX SY)]
-     [delta2 (delta SXX SY SX SXY)]
-     [a (/ delta1 delta0)]
-     [b (/ delta2 delta0)])
+    [delta0 (delta SXX N SX SX)]
+    [delta1 (delta SXY N SX SY)]
+    [delta2 (delta SXX SY SX SXY)]
+    [a (/ delta1 delta0)]
+    [b (/ delta2 delta0)])
     (cons a b)))
 
 
 (define (linear N SX SXX SY SXY)
-  (let*
-    ([coefficients (linear-coefficients N SX SXX SY SXY)]
-     [a (first coefficients)]
-     [b (second coefficients)])
-    (lambda (x) (+ (* a x) b))))
+  (with-handlers
+    ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
+    (let*
+      ([coefficients (linear-coefficients N SX SXX SY SXY)]
+      [a (car coefficients)]
+      [b (cdr coefficients)])
+      (lambda (x) (+ (* a x) b)))))
 
 
 (define (quadratic N SX SXX SY SXY SXXX SXXXX SXXY)
-  (let*
-    ([coefficients
-      (array->list
-        (matrix-solve
-          (matrix [[N SX SXX] [SX SXX SXXX] [SXX SXXX SXXXX]])
-          (col-matrix [SY SXY SXXY])))]
-     [a0 (first coefficients)]
-     [a1 (second coefficients)]
-     [a2 (third coefficients)])
-    (lambda (x) (+ a0 (* a1 x) (* a2 x x)))))
+  (with-handlers
+    ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
+    (let*
+      ([coefficients
+        (array->list
+          (matrix-solve
+            (matrix [[N SX SXX] [SX SXX SXXX] [SXX SXXX SXXXX]])
+            (col-matrix [SY SXY SXXY])))]
+      [a0 (first coefficients)]
+      [a1 (second coefficients)]
+      [a2 (third coefficients)])
+      (lambda (x) (+ a0 (* a1 x) (* a2 x x))))))
 
 
 (define (exponential N SX SXX SLnY SXLnY)
-  (let*
-    ([coefficients (linear-coefficients N SX SXX SLnY SXLnY)]
-     [A (first coefficients)]
-     [B (second coefficients)]
-     [a (exp B)]
-     [b A])
-    (lambda (x) (* a (exp (* b x))))))
+  (with-handlers
+    ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
+    (let*
+      ([coefficients (linear-coefficients N SX SXX SLnY SXLnY)]
+       [A (first coefficients)]
+       [B (second coefficients)]
+       [a (exp B)]
+       [b A])
+      (lambda (x) (* a (exp (* b x)))))))
 
 
 (define (logarithmic N SLnX SLnX2 SY SLnXY)
@@ -156,16 +162,31 @@
   (for/fold
     ([function null] #:result (void))
     ([xy (in-producer table (void))])
+    (set! function (append function (list xy)))
     (let*
       ([N (length function)]
        [x (car xy)]
-       [y (cdr xy)])
+       [y (cdr xy)]
+       [Xs    (map car function)]
+       [Ys    (map cdr function)]
+       [SX    (apply + Xs)]
+       [SXX   (apply + (map (lambda (x) (expt x 2)) Xs))]
+       [SXXX  (apply + (map (lambda (x) (expt x 3)) Xs))]
+       [SXXXX (apply + (map (lambda (x) (expt x 4)) Xs))]
+       [LnXs  (map (lambda (x) (log x)) Xs)]
+       [SLnX  (apply + LnXs)]
+       [SY    (apply + Ys)]
+       [LnYs  (map (lambda (y) (log y)) Ys)]
+       [SLnY  (apply + LnYs)]
+       [SXLnY (apply + (map (lambda (x lny) (* x lny)) Xs LnYs))]
+       [SXY   (apply + (map (lambda (x y) (* x y)) Xs Ys))]
+       [SXXY  (apply + (map (lambda (x y) (* x x y)) Xs Ys))])
       (printf "~a" x)
-      (when (linear-enabled) (printf ";~a" y))
-      (when (quad-enabled)   (printf ";~a" y))
-      (when (exp-enabled)    (printf ";~a" y))
+      (when (linear-enabled) (printf ";~a" ((linear N SX SXX SY SXY) x)))
+      (when (quad-enabled)   (printf ";~a" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x)))
+      (when (exp-enabled)    (printf ";~a" ((exponential N SX SXX SLnY SXLnY) x)))
       (when (log-enabled)    (printf ";~a" y))
       (when (pow-enabled)    (printf ";~a" y))
       (when (seg-enabled)    (printf ";~a" y))
       (newline)
-      (append function (list xy)))))
+      function)))

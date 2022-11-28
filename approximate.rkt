@@ -7,6 +7,7 @@
 
 
 (require racket/stream)
+(require racket/generator)
 
 
 (define table
@@ -112,29 +113,27 @@
 (define seg-enabled (make-parameter #f))
 (define start (make-parameter 0))
 (define step (make-parameter 1))
-(define frequency (make-parameter 1))
+
 
 (command-line
   #:program "approximate"
   #:once-each
-  [("-l" "--linear") "Use linear approximation"
-                      (linear-enabled #t)]
-  [("-q" "--quadratic") "Use quadratic approximation"
-                        (quad-enabled #t)]
-  [("-e" "--exponent") "Use exponential approximation"
-                      (exp-enabled #t)]
-  [("-g" "--logarithm") "Use logarithmic approximation"
-                        (log-enabled #t)]
-  [("-p" "--power") "Use power approximation"
-                    (pow-enabled #t)]
-  [("-s" "--segment") "Use segment approximation"
-                      (seg-enabled #t)]
-  [("--step") raw-step "Step between yielded X, default 1"
-                        (step (string->number raw-step))]
-  [("-f" "--frequency") raw-freq "the number of generated X, default 1"
-                                 (frequency (string->number 1))]
+  [("-l" "--linear")     "Use linear approximation"
+                         (linear-enabled #t)]
+  [("-q" "--quadratic")  "Use quadratic approximation"
+                         (quad-enabled #t)]
+  [("-e" "--exponent")   "Use exponential approximation"
+                         (exp-enabled #t)]
+  [("-g" "--logarithm")  "Use logarithmic approximation"
+                         (log-enabled #t)]
+  [("-p" "--power")      "Use power approximation"
+                         (pow-enabled #t)]
+  [("-s" "--segment")    "Use segment approximation"
+                         (seg-enabled #t)]
+  [("--step") raw-step   "Step between yielded X, default 1"
+                         (step (string->number raw-step))]
   [("--start") raw-start "Starting X, default 0"
-                          (start (string->number raw-start))]
+                         (start (string->number raw-start))]
   #:args () (void))
 
 
@@ -157,44 +156,62 @@
 
 (module+ main
   (print-header)
-  (for/fold
-    ([N       0]
-     [left-x  #f]
-     [right-x #f]
-     [SX      0]
-     [SXX     0]
-     [SXXX    0]
-     [SXXXX   0]
-     [SLnX    0]
-     [SY      0]
-     [SLnY    0]
-     [SXLnY   0]
-     [SXY     0]
-     [SXXY    0]
-     #:result (void))
-    ([xy table])
-    (let*
-      ([x (car xy)]
-       [y (cdr xy)])
-      (printf "~a" x)
-      (when (linear-enabled) (printf ";~a" ((linear N SX SXX SY SXY) x)))
-      (when (quad-enabled)   (printf ";~a" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x)))
-      (when (exp-enabled)    (printf ";~a" ((exponential N SX SXX SLnY SXLnY) x)))
-      (when (log-enabled)    (printf ";~a" y))
-      (when (pow-enabled)    (printf ";~a" y))
-      (when (seg-enabled)    (printf ";~a" y))
+  (let*-values
+    ([(more? get) (sequence-generate table)])
+
+    (for/fold
+
+      ;;; accums
+      ([N       0]
+       [left-x  #f]
+       [right-x #f]
+       [SX      0]
+       [SXX     0]
+       [SXXX    0]
+       [SXXXX   0]
+       [SLnX    0]
+       [SY      0]
+       [SLnY    0]
+       [SXLnY   0]
+       [SXY     0]
+       [SXXY    0]
+       #:result (void))
+
+      ;;; looped-structure
+      ([x0
+        (in-generator
+          (let loop ([x (start)])
+            (begin
+              (yield x)
+              (loop (+ x (step))))))])
+
+      ;;; body
+      (printf "~a" x0)
+      (when (linear-enabled) (printf ";~a" ((linear N SX SXX SY SXY) x0)))
+      (when (quad-enabled)   (printf ";~a" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
+      (when (exp-enabled)    (printf ";~a" ((exponential N SX SXX SLnY SXLnY) x0)))
+      (when (log-enabled)    (printf ";~a" 0))
+      (when (pow-enabled)    (printf ";~a" 0))
+      (when (seg-enabled)    (printf ";~a" 0))
       (newline)
-      (values
-        (add1 N)
-        (if left-x  (min left-x x)  x)
-        (if right-x (max right-x x) x)
-        (+ SX x)
-        (+ SXX (* x x))
-        (+ SXXX (expt x 3))
-        (+ SXXXX (expt x 4))
-        (+ SLnX (log x))
-        (+ SY y)
-        (+ SLnY (log y))
-        (+ SXLnY (* x (log y)))
-        (+ SXY (* x y))
-        (+ SXXY (* x x y))))))
+      (if (more?)
+        (let*
+          ([xy (get)]
+           [x (car xy)]
+           [y (car xy)])
+
+          (values
+            (add1 N)
+            (if left-x  (min left-x x)  x)
+            (if right-x (max right-x x) x)
+            (+ SX x)
+            (+ SXX (* x x))
+            (+ SXXX (expt x 3))
+            (+ SXXXX (expt x 4))
+            (+ SLnX (log x))
+            (+ SY y)
+            (+ SLnY (log y))
+            (+ SXLnY (* x (log y)))
+            (+ SXY (* x y))
+            (+ SXXY (* x x y))))
+        (values N left-x right-x SX SXX SXXX SXXXX SLnX SY SLnY SXLnY SXY SXXY)))))

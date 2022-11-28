@@ -160,27 +160,24 @@
 (module+ main
   (print-header)
   (for/fold
-    ([function null] #:result (void))
+    ([N       0]
+     [left-x  #f]
+     [right-x #f]
+     [SX      0]
+     [SXX     0]
+     [SXXX    0]
+     [SXXXX   0]
+     [SLnX    0]
+     [SY      0]
+     [SLnY    0]
+     [SXLnY   0]
+     [SXY     0]
+     [SXXY    0]
+     #:result (void))
     ([xy (in-producer table (void))])
-    (set! function (append function (list xy)))
     (let*
-      ([N (length function)]
-       [x (car xy)]
-       [y (cdr xy)]
-       [Xs    (map car function)]
-       [Ys    (map cdr function)]
-       [SX    (apply + Xs)]
-       [SXX   (apply + (map (lambda (x) (expt x 2)) Xs))]
-       [SXXX  (apply + (map (lambda (x) (expt x 3)) Xs))]
-       [SXXXX (apply + (map (lambda (x) (expt x 4)) Xs))]
-       [LnXs  (map (lambda (x) (log x)) Xs)]
-       [SLnX  (apply + LnXs)]
-       [SY    (apply + Ys)]
-       [LnYs  (map (lambda (y) (log y)) Ys)]
-       [SLnY  (apply + LnYs)]
-       [SXLnY (apply + (map (lambda (x lny) (* x lny)) Xs LnYs))]
-       [SXY   (apply + (map (lambda (x y) (* x y)) Xs Ys))]
-       [SXXY  (apply + (map (lambda (x y) (* x x y)) Xs Ys))])
+      ([x (car xy)]
+       [y (cdr xy)])
       (printf "~a" x)
       (when (linear-enabled) (printf ";~a" ((linear N SX SXX SY SXY) x)))
       (when (quad-enabled)   (printf ";~a" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x)))
@@ -189,4 +186,17 @@
       (when (pow-enabled)    (printf ";~a" y))
       (when (seg-enabled)    (printf ";~a" y))
       (newline)
-      function)))
+      (values
+        (add1 N)
+        (if left-x  (min left-x x)  x)
+        (if right-x (max right-x x) x)
+        (+ SX x)
+        (+ SXX (* x x))
+        (+ SXXX (expt x 3))
+        (+ SXXXX (expt x 4))
+        (+ SLnX (log x))
+        (+ SY y)
+        (+ SLnY (log y))
+        (+ SXLnY (* x (log y)))
+        (+ SXY (* x y))
+        (+ SXXY (* x x y))))))

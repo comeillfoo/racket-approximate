@@ -6,18 +6,16 @@
 (require math/matrix)
 
 
-(require racket/generator)
+(require racket/stream)
 
 
 (define table
-  (generator ()
-    (for
-      ([line (in-lines)])
-      (let ([xy (string-split line ";" #:trim? #t #:repeat? 2)])
-        (yield
-          (cons
-            (string->number (first xy))
-            (string->number (second xy))))))))
+  (for/stream
+    ([line (in-lines)])
+    (let ([xy (string-split line ";" #:trim? #t #:repeat? 2)])
+      (cons
+        (string->number (first xy))
+        (string->number (second xy))))))
 
 
 (define (linear-coefficients N SX SXX SY SXY)
@@ -174,7 +172,7 @@
      [SXY     0]
      [SXXY    0]
      #:result (void))
-    ([xy (in-producer table (void))])
+    ([xy table])
     (let*
       ([x (car xy)]
        [y (cdr xy)])

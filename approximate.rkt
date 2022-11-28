@@ -30,17 +30,20 @@
     (cons a b)))
 
 
-(define (linear N SX SXX SY SXY)
+(define (linear left-x right-x N SX SXX SY SXY)
   (with-handlers
     ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
     (let*
       ([coefficients (linear-coefficients N SX SXX SY SXY)]
       [a (car coefficients)]
       [b (cdr coefficients)])
-      (lambda (x) (+ (* a x) b)))))
+      (lambda (x)
+        (if (and (<= x right-x) (>= x left-x))
+          (+ (* a x) b)
+          +nan.0)))))
 
 
-(define (quadratic N SX SXX SY SXY SXXX SXXXX SXXY)
+(define (quadratic left-x right-x N SX SXX SY SXY SXXX SXXXX SXXY)
   (with-handlers
     ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
     (let*
@@ -52,10 +55,13 @@
       [a0 (first coefficients)]
       [a1 (second coefficients)]
       [a2 (third coefficients)])
-      (lambda (x) (+ a0 (* a1 x) (* a2 x x))))))
+      (lambda (x)
+        (if (and (<= x right-x) (>= x left-x))
+          (+ a0 (* a1 x) (* a2 x x))
+          +nan.0)))))
 
 
-(define (exponential N SX SXX SLnY SXLnY)
+(define (exponential left-x right-x N SX SXX SLnY SXLnY)
   (with-handlers
     ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
     (let*
@@ -64,7 +70,10 @@
        [B (second coefficients)]
        [a (exp B)]
        [b A])
-      (lambda (x) (* a (exp (* b x)))))))
+      (lambda (x)
+        (if (and (<= x right-x) (>= x left-x))
+          (* a (exp (* b x)))
+          +nan.0)))))
 
 
 (define (logarithmic N SLnX SLnX2 SY SLnXY)
@@ -187,9 +196,9 @@
 
       ;;; body
       (printf "~a" x0)
-      (when (linear-enabled) (printf ";~a" ((linear N SX SXX SY SXY) x0)))
-      (when (quad-enabled)   (printf ";~a" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
-      (when (exp-enabled)    (printf ";~a" ((exponential N SX SXX SLnY SXLnY) x0)))
+      (when (linear-enabled) (printf ";~a" ((linear left-x right-x N SX SXX SY SXY) x0)))
+      (when (quad-enabled)   (printf ";~a" ((quadratic left-x right-x N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
+      (when (exp-enabled)    (printf ";~a" ((exponential left-x right-x N SX SXX SLnY SXLnY) x0)))
       (when (log-enabled)    (printf ";~a" 0))
       (when (pow-enabled)    (printf ";~a" 0))
       (when (seg-enabled)    (printf ";~a" 0))

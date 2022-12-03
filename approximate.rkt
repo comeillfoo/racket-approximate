@@ -171,7 +171,6 @@
   ;; tests
   (define X (inclusive-range -500.0 500.0 1.0))
 
-
   (define linears
     (let
       ([f (lambda (k b) (lambda (x) (+ (* k x) b)))])
@@ -184,7 +183,6 @@
         (f  -1  0)
         (f -11 -7))))
 
-
   (define trinominals
     (let
       ([f (lambda (a b c) (lambda (x) (+ (* a x x) (* b x) c)))])
@@ -194,7 +192,6 @@
         (f  0  0 3)
         (f  1  0 0)
         (f -1 -3 4))))
-
 
   (define exponents
     (let
@@ -363,12 +360,30 @@
         (> N 1)
         ;;; body
         (pretty-print x0)
-        (when (linear-enabled) (pretty-print #:sep ";" ((linear N SX SXX SY SXY) x0)))
-        (when (quad-enabled)   (pretty-print #:sep ";" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
-        (when (exp-enabled)    (pretty-print #:sep ";" ((exponential N SX SXX SLnY SXLnY) x0)))
-        (when (log-enabled)    (pretty-print #:sep ";" ((logarithmic N SLnX SLnX2 SY SLnXY) x0)))
-        (when (pow-enabled)    (pretty-print #:sep ";" ((power N SLnX SLnX2 SLnY SLnXLnY) x0)))
-        (when (seg-enabled)    (pretty-print #:sep ";" ((segment Xs Ys) x0)))
+        (when
+          (linear-enabled)
+          (pretty-print #:sep ";"
+            ((linear N SX SXX SY SXY) x0)))
+        (when
+          (quad-enabled)
+          (pretty-print #:sep ";"
+            ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
+        (when
+          (exp-enabled)
+          (pretty-print #:sep ";"
+            ((exponential N SX SXX SLnY SXLnY) x0)))
+        (when
+          (log-enabled)
+          (pretty-print #:sep ";"
+            ((logarithmic N SLnX SLnX2 SY SLnXY) x0)))
+        (when
+          (pow-enabled)
+          (pretty-print #:sep ";"
+            ((power N SLnX SLnX2 SLnY SLnXLnY) x0)))
+        (when
+          (seg-enabled)
+          (pretty-print #:sep ";"
+            ((segment Xs Ys) x0)))
         (newline))
       (if (more?)
         (let*

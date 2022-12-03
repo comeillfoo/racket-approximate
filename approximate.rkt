@@ -101,6 +101,22 @@
               (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0))))))))))
 
 
+(define (print-y y)
+  (define gl-width 15)
+  (printf
+    ";~a"
+    (if (rational? y)
+      (~r
+        #:base 10
+        #:precision '(= 4)
+        #:notation 'exponential
+        #:min-width gl-width
+        y)
+      (~a
+        +nan.0
+        #:align 'right
+        #:min-width gl-width))))
+
 (require racket/cmdline)
 
 (define linear-enabled (make-parameter #f))
@@ -195,12 +211,12 @@
         (> N 1)
         ;;; body
         (printf "~a" x0)
-        (when (linear-enabled) (printf ";~a" ((linear N SX SXX SY SXY) x0)))
-        (when (quad-enabled)   (printf ";~a" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
-        (when (exp-enabled)    (printf ";~a" ((exponential N SX SXX SLnY SXLnY) x0)))
-        (when (log-enabled)    (printf ";~a" ((logarithmic N SLnX SLnX2 SY SLnXY) x0)))
-        (when (pow-enabled)    (printf ";~a" ((power N SLnX SLnX2 SLnY SLnXLnY) x0)))
-        (when (seg-enabled)    (printf ";~a" ((segment Xs Ys) x0)))
+        (when (linear-enabled) (print-y ((linear N SX SXX SY SXY) x0)))
+        (when (quad-enabled)   (print-y ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
+        (when (exp-enabled)    (print-y ((exponential N SX SXX SLnY SXLnY) x0)))
+        (when (log-enabled)    (print-y ((logarithmic N SLnX SLnX2 SY SLnXY) x0)))
+        (when (pow-enabled)    (print-y ((power N SLnX SLnX2 SLnY SLnXLnY) x0)))
+        (when (seg-enabled)    (print-y ((segment Xs Ys) x0)))
         (newline))
       (if (more?)
         (let*

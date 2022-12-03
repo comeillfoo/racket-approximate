@@ -114,7 +114,7 @@
         #:min-width gl-width
         value)
       (~a
-        (if (complex? value) +nan.0 value)
+        (if (complex? value) "" value)
         #:align 'right
         #:min-width gl-width))))
 

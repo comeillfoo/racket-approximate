@@ -83,8 +83,8 @@
   (if (or (null? xs) (null? ys))
     (lambda (x) +nan.0)
     (let*
-      ([left-bound (apply min xs)]
-      [right-bound (apply max xs)])
+      ([left-bound  (apply min xs)]
+       [right-bound (apply max xs)])
       (lambda (x)
         (if (or (< x left-bound) (> x right-bound))
           +nan.0
@@ -169,7 +169,7 @@
 (module+ test
   (require rackunit)
   ;; tests
-  (define X (inclusive-range -500.0 500.0 0.1))
+  (define X (inclusive-range -500.0 500.0 1.0))
 
 
   (define linears
@@ -233,14 +233,21 @@
     (for
       ([f linears])
       (let*
-        ([Y   (map f X)]
-        [SY  (apply + Y)]
-        [SXY (apply + (map (lambda (x y) (* x y)) X Y))]
-        [g   (linear N SX SXX SY SXY)])
+        ([Y    (map f X)]
+         [SY    (apply + Y)]
+         [SXY   (apply + (map (lambda (x y) (* x y)) X Y))]
+         [g     (linear N SX SXX SY SXY)]
+         [min-x (apply min X)]
+         [max-x (apply max X)]
+         [h     (segment X Y)])
 
         (for
           ([x X])
-          (check-= (g x) (f x) 1e-05 "Linear approximation doesn't match precision"))))
+          (check-= (g x) (f x) 1e-05 "Linear approximation doesn't match precision")
+          (check-= (h x) (f x) 0.0   "Segment approximation doesn't match exact value"))
+
+        (check-pred nan? (h (- min-x 1.0e-12)) "Nan if outside of area")
+        (check-pred nan? (h (+ max-x 1.0e-12)) "Nan if outside of area")))
 
     (for
       ([f trinominals])
@@ -313,8 +320,7 @@
 
         (for
           ([x positive-X])
-          (check-= (g x) (f x) 1e-05 "Power approximation doesn't match precision"))))
-    ))
+          (check-= (g x) (f x) 1e-05 "Power approximation doesn't match precision"))))))
 
 
 (module+ main

@@ -22,11 +22,11 @@
 (define (linear-coefficients N SX SXX SY SXY)
   (let*
     ([delta (lambda (arg1 arg2 arg3 arg4) (- (* arg1 arg2) (* arg3 arg4)))]
-    [delta0 (delta SXX N SX SX)]
-    [delta1 (delta SXY N SX SY)]
-    [delta2 (delta SXX SY SX SXY)]
-    [a (/ delta1 delta0)]
-    [b (/ delta2 delta0)])
+     [delta0 (delta SXX N SX SX)]
+     [delta1 (delta SXY N SX SY)]
+     [delta2 (delta SXX SY SX SXY)]
+     [a (/ delta1 delta0)]
+     [b (/ delta2 delta0)])
     (cons a b)))
 
 
@@ -169,7 +169,152 @@
 (module+ test
   (require rackunit)
   ;; tests
-  (check-equal? 1 1))
+  (define X (inclusive-range -500.0 500.0 0.1))
+
+
+  (define linears
+    (let
+      ([f (lambda (k b) (lambda (x) (+ (* k x) b)))])
+      (list
+        (f   0  0)
+        (f   0  4)
+        (f   1  0)
+        (f   2  0)
+        (f   2  5)
+        (f  -1  0)
+        (f -11 -7))))
+
+
+  (define trinominals
+    (let
+      ([f (lambda (a b c) (lambda (x) (+ (* a x x) (* b x) c)))])
+
+      (list
+        (f  0  0 0)
+        (f  0  0 3)
+        (f  1  0 0)
+        (f -1 -3 4))))
+
+
+  (define exponents
+    (let
+      ([f (lambda (a b) (lambda (x) (* a (exp (* b x)))))])
+
+      (list
+        (f  2  0)
+        (f -3  0)
+        (f  1  1))))
+
+  (define logarithms
+    (let
+      ([f (lambda (a b) (lambda (x) (+ (* a (log x)) b)))])
+
+      (list
+        (f 0  0)
+        (f 0 -1)
+        (f 1  0)
+        (f 2 -1))))
+
+  (define powers
+    (let
+      ([f (lambda (a b) (lambda (x) (* a (expt x b))))])
+      (list
+        (f  1 0)
+        (f  2 0)
+        (f -1 0))))
+
+  (let*
+    ([N     (length X)]
+     [SX    (apply + X)]
+     [SXX   (apply + (map (lambda (x) (expt x 2)) X))]
+     [SXXX  (apply + (map (lambda (x) (expt x 3)) X))]
+     [SXXXX (apply + (map (lambda (x) (expt x 4)) X))])
+
+    (for
+      ([f linears])
+      (let*
+        ([Y   (map f X)]
+        [SY  (apply + Y)]
+        [SXY (apply + (map (lambda (x y) (* x y)) X Y))]
+        [g   (linear N SX SXX SY SXY)])
+
+        (for
+          ([x X])
+          (check-= (g x) (f x) 1e-05 "Linear approximation doesn't match precision"))))
+
+    (for
+      ([f trinominals])
+      (let*
+        ([Y   (map f X)]
+        [SY   (apply + Y)]
+        [SXY  (apply + (map (lambda (x y) (* x y)) X Y))]
+        [SXXY (apply + (map (lambda (x y) (* x x y)) X Y))]
+        [g    (quadratic N SX SXX SY SXY SXXX SXXXX SXXY)])
+
+        (for
+          ([x X])
+          (check-= (g x) (f x) 1e-05 "Quadratic approximation doesn't match precision"))))
+
+    (for
+      ([f exponents])
+      (let*
+        ([Y     (map f X)]
+         [SLnY  (apply + (map (lambda (y) (log y)) Y))]
+         [SXLnY (apply + (map (lambda (x y) (* x (log y))) X Y))]
+         [g     (exponential N SX SXX SLnY SXLnY)])
+
+        (for
+          ([x X])
+          (check-= (g x) (f x) 1e-05 "Exponential approximation doesn't match precision"))))
+
+    (for
+      ([f logarithms])
+      (let*
+        ([positive-X (filter positive? X)]
+         [Y          (map f positive-X)]
+         [N          (length positive-X)]
+         [SLnX       (apply + (map (lambda (x) (log x)) positive-X))]
+         [SLnX2      (apply + (map (lambda (x) (expt (log x) 2)) positive-X))]
+         [SY         (apply + Y)]
+         [SLnXY      (apply + (map (lambda (x y) (* (log x) y)) positive-X Y))]
+         [g          (logarithmic N SLnX SLnX2 SY SLnXY)])
+
+        (for
+          ([x positive-X])
+          (check-= (g x) (f x) 1e-05 "Logarithmic approximation doesn't match precision"))))
+
+    (for
+      ([f powers])
+      (let*
+        ([positive-X (filter positive? X)]
+         [Y          (map f positive-X)]
+         [N          (length positive-X)]
+         [SLnX       (apply + (map (lambda (x) (log x)) positive-X))]
+         [SLnX2      (apply + (map (lambda (x) (expt (log x) 2)) positive-X))]
+         [SLnY       (apply + (map (lambda (y) (log y)) Y))]
+         [SLnXLnY    (apply + (map (lambda (x y) (* (log x) (log y))) positive-X Y))]
+         [g          (power N SLnX SLnX2 SLnY SLnXLnY)])
+
+        (for
+          ([x positive-X])
+          (check-= (g x) (f x) 1e-05 "Power approximation doesn't match precision"))))
+
+    (for
+      ([f powers])
+      (let*
+        ([positive-X (filter positive? X)]
+         [Y          (map f positive-X)]
+         [N          (length positive-X)]
+         [SLnX       (apply + (map (lambda (x) (log x)) positive-X))]
+         [SLnX2      (apply + (map (lambda (x) (expt (log x) 2)) positive-X))]
+         [SLnY       (apply + (map (lambda (y) (log y)) Y))]
+         [SLnXLnY    (apply + (map (lambda (x y) (* (log x) (log y))) positive-X Y))]
+         [g          (power N SLnX SLnX2 SLnY SLnXLnY)])
+
+        (for
+          ([x positive-X])
+          (check-= (g x) (f x) 1e-05 "Power approximation doesn't match precision"))))
+    ))
 
 
 (module+ main

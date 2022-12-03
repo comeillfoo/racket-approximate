@@ -101,19 +101,20 @@
               (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0))))))))))
 
 
-(define (print-y y)
+(define (pretty-print value #:sep [sep ""])
   (define gl-width 15)
   (printf
-    ";~a"
-    (if (rational? y)
+    "~a~a"
+    sep
+    (if (rational? value)
       (~r
         #:base 10
         #:precision '(= 4)
         #:notation 'exponential
         #:min-width gl-width
-        y)
+        value)
       (~a
-        +nan.0
+        (if (complex? value) +nan.0 value)
         #:align 'right
         #:min-width gl-width))))
 
@@ -155,13 +156,13 @@
 
 
 (define (print-header)
-  (printf "x")
-  (when (linear-enabled) (printf ";linear"))
-  (when (quad-enabled)   (printf ";quadratic"))
-  (when (exp-enabled)    (printf ";exponent"))
-  (when (log-enabled)    (printf ";logarithm"))
-  (when (pow-enabled)    (printf ";power"))
-  (when (seg-enabled)    (printf ";segment"))
+  (pretty-print "x")
+  (when (linear-enabled) (pretty-print #:sep ";" "linear"))
+  (when (quad-enabled)   (pretty-print #:sep ";" "quadratic"))
+  (when (exp-enabled)    (pretty-print #:sep ";" "exponent"))
+  (when (log-enabled)    (pretty-print #:sep ";" "logarithm"))
+  (when (pow-enabled)    (pretty-print #:sep ";" "power"))
+  (when (seg-enabled)    (pretty-print #:sep ";" "segment"))
   (newline))
 
 
@@ -210,13 +211,13 @@
       (when
         (> N 1)
         ;;; body
-        (printf "~a" x0)
-        (when (linear-enabled) (print-y ((linear N SX SXX SY SXY) x0)))
-        (when (quad-enabled)   (print-y ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
-        (when (exp-enabled)    (print-y ((exponential N SX SXX SLnY SXLnY) x0)))
-        (when (log-enabled)    (print-y ((logarithmic N SLnX SLnX2 SY SLnXY) x0)))
-        (when (pow-enabled)    (print-y ((power N SLnX SLnX2 SLnY SLnXLnY) x0)))
-        (when (seg-enabled)    (print-y ((segment Xs Ys) x0)))
+        (pretty-print x0)
+        (when (linear-enabled) (pretty-print #:sep ";" ((linear N SX SXX SY SXY) x0)))
+        (when (quad-enabled)   (pretty-print #:sep ";" ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x0)))
+        (when (exp-enabled)    (pretty-print #:sep ";" ((exponential N SX SXX SLnY SXLnY) x0)))
+        (when (log-enabled)    (pretty-print #:sep ";" ((logarithmic N SLnX SLnX2 SY SLnXY) x0)))
+        (when (pow-enabled)    (pretty-print #:sep ";" ((power N SLnX SLnX2 SLnY SLnXLnY) x0)))
+        (when (seg-enabled)    (pretty-print #:sep ";" ((segment Xs Ys) x0)))
         (newline))
       (if (more?)
         (let*

@@ -66,7 +66,10 @@
     ([coefficients (linear-coefficients N SLnX SLnX2 SY SLnXY)]
      [a (car coefficients)]
      [b (cdr coefficients)])
-    (lambda (x) (+ (* a (log x)) b))))
+    (lambda (x)
+      (if (> x 0)
+        (+ (* a (log x)) b)
+        +nan.0))))
 
 
 (define (power N SLnX SLnX2 SLnY SLnXLnY)
@@ -76,7 +79,10 @@
      [B (cdr coefficients)]
      [a (exp B)]
      [b A])
-    (lambda (x) (* a (expt x b)))))
+    (lambda (x)
+      (if (zero? x)
+        +nan.0
+        (* a (expt x b))))))
 
 
 (define (segment xs ys)
@@ -344,17 +350,17 @@
        [SXXY    0]
        [Xs   null]
        [Ys   null]
+       [n       0]
        #:result (void))
 
       ;;; looped-structure
       ([x0
         (in-generator
-          (let loop ([x (start)])
+          (let loop ([x (- (start) (* 2 (step)))])
             (begin
               (yield x)
               (loop (+ x (step))))))]
-
-        #:break (>= N (count)))
+        #:break (>= n (count)))
 
       (when
         (> N 1)
@@ -407,5 +413,6 @@
             (+ SLnXLnY (* (log x) (log y)))
             (+ SXXY (* x x y))
             (append Xs (list x))
-            (append Ys (list y))))
-        (values N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY Xs Ys)))))
+            (append Ys (list y))
+            (add1 n)))
+        (values N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY Xs Ys (add1 n))))))

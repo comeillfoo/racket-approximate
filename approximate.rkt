@@ -94,9 +94,11 @@
                 (lambda (maybe-x) (- x maybe-x))
                 (filter-not (lambda (arg) (> arg x)) xs))]
             [y0 (list-ref ys (index-of xs x0))]
-            [x1 (second (member x0 xs))]
+            [x1 (last (member x0 xs))]
             [y1 (list-ref ys (index-of xs x1))])
-            (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0)))))))))
+            (if (eq? x0 x1)
+              y0
+              (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0))))))))))
 
 
 (require racket/cmdline)
@@ -186,6 +188,7 @@
             (begin
               (yield x)
               (loop (+ x (step))))))]
+
         #:break (>= N (count)))
 
       (when
@@ -203,7 +206,7 @@
         (let*
           ([xy (get)]
            [x (car xy)]
-           [y (car xy)])
+           [y (cdr xy)])
 
           (values
             (add1 N)

@@ -310,6 +310,7 @@ power_sqrtx.csv:
 160.99999999999997;12.688577540449518
 ```
 
+Соответствующий вывод.
 ```bash
 comeillfoo@come1llf00:~/fun/functional-programming/racket-approximate$ cat tests/power_sqrtx.csv | racket approximator.rkt -lqegps --step 0.7 --start 20.0 -c 8
               x;         linear;      quadratic;       exponent;      logarithm;          power;        segment

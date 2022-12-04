@@ -39,16 +39,18 @@
 
 
 (define (quadratic N SX SXX SY SXY SXXX SXXXX SXXY)
-  (let*
-    ([coefficients
-      (array->list
-        (matrix-solve
-          (matrix [[N SX SXX] [SX SXX SXXX] [SXX SXXX SXXXX]])
-          (col-matrix [SY SXY SXXY])))]
-    [a0 (first coefficients)]
-    [a1 (second coefficients)]
-    [a2 (third coefficients)])
-    (lambda (x) (+ a0 (* a1 x) (* a2 x x)))))
+  (with-handlers
+    ([exn:fail? (lambda (e) (lambda (x) +nan.0))])
+    (let*
+      ([coefficients
+        (array->list
+          (matrix-solve
+            (matrix [[N SX SXX] [SX SXX SXXX] [SXX SXXX SXXXX]])
+            (col-matrix [SY SXY SXXY])))]
+      [a0 (first coefficients)]
+      [a1 (second coefficients)]
+      [a2 (third coefficients)])
+      (lambda (x) (+ a0 (* a1 x) (* a2 x x))))))
 
 
 (define (exponential N SX SXX SLnY SXLnY)
@@ -113,12 +115,15 @@
     "~a~a"
     sep
     (if (rational? value)
-      (~r
-        #:base 10
-        #:precision '(= 4)
-        #:notation 'exponential
+      (~a
+        #:align 'right
         #:min-width gl-width
-        value)
+        (~r
+          #:base 10
+          #:precision '(= 4)
+          #:notation 'exponential
+          #:format-exponent "E"
+          value))
       (~a
         (if (complex? value) "" value)
         #:align 'right
@@ -225,7 +230,10 @@
         (f  1 0)
         (f  2 0)
         (f -1 0)
-        (f  1 0.5))))
+        (f  1 0.5)
+        (f  1 1)
+        (f  1 2)
+        (f  2 3))))
 
   (let*
     ([N     (length X)]
@@ -308,23 +316,7 @@
 
         (for
           ([x positive-X])
-          (check-= (g x) (f x) 1e-05 "Power approximation doesn't match precision"))))
-
-    (for
-      ([f powers])
-      (let*
-        ([positive-X (filter positive? X)]
-         [Y          (map f positive-X)]
-         [N          (length positive-X)]
-         [SLnX       (apply + (map (lambda (x) (log x)) positive-X))]
-         [SLnX2      (apply + (map (lambda (x) (expt (log x) 2)) positive-X))]
-         [SLnY       (apply + (map (lambda (y) (log y)) Y))]
-         [SLnXLnY    (apply + (map (lambda (x y) (* (log x) (log y))) positive-X Y))]
-         [g          (power N SLnX SLnX2 SLnY SLnXLnY)])
-
-        (for
-          ([x positive-X])
-          (check-= (g x) (f x) 1e-05 "Power approximation doesn't match precision"))))))
+          (check-= (g x) (f x) 1e-04 "Power approximation doesn't match precision"))))))
 
 
 (module+ main

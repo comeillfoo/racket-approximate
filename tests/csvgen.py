@@ -26,7 +26,12 @@ def main() -> int:
 
   args = parser.parse_args()
 
-  for line in generate(args.start, args.end, args.count, getattr(math, args.function)):
+  f = lambda x: x
+  if args.function == 'exp2':
+    f = lambda x: x * x
+  else:
+    f = getattr(math, args.function)
+  for line in generate(args.start, args.end, args.count, f):
     print(line)
 
   return 0

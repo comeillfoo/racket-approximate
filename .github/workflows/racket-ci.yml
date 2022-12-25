@@ -1,6 +1,6 @@
 # Default Racket CI
 
-name: racket-btree
+name: racket-approximate
 
 on: [push, pull_request]
 

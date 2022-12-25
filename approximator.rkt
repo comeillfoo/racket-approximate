@@ -87,104 +87,77 @@
 
 (require racket/cmdline)
 
-(struct
-  context
-  ([sums  #:mutable]
-   [xs    #:mutable]
-   [ys    #:mutable]
-   [flags #:mutable]
-   [start #:mutable]
-   [step  #:mutable]
-   [count #:mutable])
+(struct context
+        ([sums #:mutable] [xs #:mutable]
+                          [ys #:mutable]
+                          [flags #:mutable]
+                          [start #:mutable]
+                          [step #:mutable]
+                          [count #:mutable])
   #:transparent)
 
 (define initial-global-context
-  (context
-    (list 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-    null
-    null
-    (list #f #f #f #f #f #f)
-    0
-    1
-    +inf.0))
-
+  (context (list 0 0 0 0 0 0 0 0 0 0 0 0 0 0) null null (list #f #f #f #f #f #f) 0 1 +inf.0))
 
 (define (next-y ctx x)
   (match-let
-    ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY) (context-sums ctx)]
-     [(list linear? quadratic? exponential? logarithmic? power? segment?) (context-flags ctx)])
+      ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY) (context-sums ctx)]
+       [(list linear? quadratic? exponential? logarithmic? power? segment?) (context-flags ctx)])
 
-    (let
-      ([Xs (context-xs ctx)]
-       [Ys (context-ys ctx)]
-       [y null])
+    (let ([Xs (context-xs ctx)] [Ys (context-ys ctx)] [y null])
 
       (when linear?
-        (set! y
-          (append y (list ((linear N SX SXX SY SXY) x)))))
+        (set! y (append y (list ((linear N SX SXX SY SXY) x)))))
 
       (when quadratic?
-        (set! y
-          (append y (list ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x)))))
+        (set! y (append y (list ((quadratic N SX SXX SY SXY SXXX SXXXX SXXY) x)))))
 
       (when exponential?
-        (set! y
-          (append y (list ((exponential N SX SXX SLnY SXLnY) x)))))
+        (set! y (append y (list ((exponential N SX SXX SLnY SXLnY) x)))))
 
       (when logarithmic?
-        (set! y
-          (append y (list ((logarithmic N SLnX SLnX2 SY SLnXY) x)))))
+        (set! y (append y (list ((logarithmic N SLnX SLnX2 SY SLnXY) x)))))
 
       (when power?
-        (set! y
-          (append y (list ((power N SLnX SLnX2 SLnY SLnXLnY) x)))))
+        (set! y (append y (list ((power N SLnX SLnX2 SLnY SLnXLnY) x)))))
 
       (when segment?
-        (set! y
-          (append y (list ((segment Xs Ys) x)))))
+        (set! y (append y (list ((segment Xs Ys) x)))))
       y)))
-
 
 (command-line
  #:program "approximate"
- #:once-each [("-l" "--linear") "Use linear approximation"
-  (set-context-flags!
-    initial-global-context
-    (list-set (context-flags initial-global-context) 0 #t))]
- [("-q" "--quadratic") "Use quadratic approximation"
-  (set-context-flags!
-    initial-global-context
-    (list-set (context-flags initial-global-context) 1 #t))]
- [("-e" "--exponent") "Use exponential approximation"
-  (set-context-flags!
-    initial-global-context
-    (list-set (context-flags initial-global-context) 2 #t))]
- [("-g" "--logarithm") "Use logarithmic approximation"
-  (set-context-flags!
-    initial-global-context
-    (list-set (context-flags initial-global-context) 3 #t))]
- [("-p" "--power") "Use power approximation"
-  (set-context-flags!
-    initial-global-context
-    (list-set (context-flags initial-global-context) 4 #t))]
- [("-s" "--segment") "Use segment approximation"
-  (set-context-flags!
-    initial-global-context
-    (list-set (context-flags initial-global-context) 5 #t))]
- [("--step") raw-step "Step between yielded X, default 1"
-  (set-context-step!
-    initial-global-context
-    (string->number raw-step))]
- [("--start") raw-start "Starting X, default 0"
-  (set-context-start!
-    initial-global-context
-    (string->number raw-start))]
+ #:once-each [("-l" "--linear")
+              "Use linear approximation"
+              (set-context-flags! initial-global-context
+                                  (list-set (context-flags initial-global-context) 0 #t))]
+ [("-q" "--quadratic")
+  "Use quadratic approximation"
+  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 1 #t))]
+ [("-e" "--exponent")
+  "Use exponential approximation"
+  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 2 #t))]
+ [("-g" "--logarithm")
+  "Use logarithmic approximation"
+  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 3 #t))]
+ [("-p" "--power")
+  "Use power approximation"
+  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 4 #t))]
+ [("-s" "--segment")
+  "Use segment approximation"
+  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 5 #t))]
+ [("--step")
+  raw-step
+  "Step between yielded X, default 1"
+  (set-context-step! initial-global-context (string->number raw-step))]
+ [("--start")
+  raw-start
+  "Starting X, default 0"
+  (set-context-start! initial-global-context (string->number raw-start))]
  [("-c" "--count")
   raw-count
   "Number of approximated x, default +inf.0"
-  (set-context-count!
-    initial-global-context
-    (string->number raw-count))]
+  (set-context-count! initial-global-context (string->number raw-count))]
  #:args ()
  (void))
 
@@ -299,87 +272,60 @@
         (for ([x positive-X])
           (check-= (g x) (f x) 1e-04 "Power approximation doesn't match precision"))))))
 
-
 (module+ main
   (print-header initial-global-context)
   (let*-values ([(more? get) (sequence-generate table)])
 
     ;;; accums
     ;;; looped-structure
-    (for/fold
-      ([ctx initial-global-context]
-       [n 0]
-       #:result (void))
+    (for/fold ([ctx initial-global-context] [n 0] #:result (void))
+              ([x0 (in-generator (let loop ([x (- (context-start initial-global-context)
+                                                  (* 2 (context-step initial-global-context)))])
+                                   (begin
+                                     (yield x)
+                                     (loop (+ x (context-step initial-global-context))))))]
+               #:break (>= n (context-count initial-global-context)))
 
-      ([x0
-        (in-generator
-          (let loop
-            ([x (- (context-start initial-global-context) (* 2 (context-step initial-global-context)))])
-            (begin
-              (yield x)
-              (loop (+ x (context-step initial-global-context))))))]
-       #:break (>= n (context-count initial-global-context)))
-
-      (match-let
-        ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY) (context-sums ctx)])
+      (match-let ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY)
+                   (context-sums ctx)])
 
         (when (> N 1)
           ;;; body
           (pretty-print x0)
 
-          (for
-            ([y (next-y ctx x0)])
+          (for ([y (next-y ctx x0)])
             (pretty-print #:sep ";" y))
           (newline))
 
-
         (values
-          (if (more?)
-            (let*
-              ([xy (get)] [x (car xy)] [y (cdr xy)])
+         (if (more?)
+             (let* ([xy (get)] [x (car xy)] [y (cdr xy)])
 
-              (context
-                (list
-                  (add1 N)
-                  (+ SX x)
-                  (+ SXX (* x x))
-                  (+ SXXX (expt x 3))
-                  (+ SXXXX (expt x 4))
-                  (+ SLnX (log x))
-                  (+ SLnX2 (expt (log x) 2))
-                  (+ SY y)
-                  (+ SLnY (log y))
-                  (+ SXLnY (* x (log y)))
-                  (+ SLnXY (* (log x) y))
-                  (+ SXY (* x y))
-                  (+ SLnXLnY (* (log x) (log y)))
-                  (+ SXXY (* x x y)))
-                (append (context-xs ctx) (list x))
-                (append (context-ys ctx) (list y))
-                (context-flags ctx)
-                (context-start ctx)
-                (context-step ctx)
-                (context-count ctx)))
-            (context
-              (list
-                N
-                SX
-                SXX
-                SXXX
-                SXXXX
-                SLnX
-                SLnX2
-                SY
-                SLnY
-                SXLnY
-                SLnXY
-                SXY
-                SLnXLnY
-                SXXY)
-              (context-xs ctx)
-              (context-ys ctx)
-              (context-flags ctx)
-              (context-start ctx)
-              (context-step ctx)
-              (context-count ctx)))
-          (add1 n))))))
+               (context (list (add1 N)
+                              (+ SX x)
+                              (+ SXX (* x x))
+                              (+ SXXX (expt x 3))
+                              (+ SXXXX (expt x 4))
+                              (+ SLnX (log x))
+                              (+ SLnX2 (expt (log x) 2))
+                              (+ SY y)
+                              (+ SLnY (log y))
+                              (+ SXLnY (* x (log y)))
+                              (+ SLnXY (* (log x) y))
+                              (+ SXY (* x y))
+                              (+ SLnXLnY (* (log x) (log y)))
+                              (+ SXXY (* x x y)))
+                        (append (context-xs ctx) (list x))
+                        (append (context-ys ctx) (list y))
+                        (context-flags ctx)
+                        (context-start ctx)
+                        (context-step ctx)
+                        (context-count ctx)))
+             (context (list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY)
+                      (context-xs ctx)
+                      (context-ys ctx)
+                      (context-flags ctx)
+                      (context-start ctx)
+                      (context-step ctx)
+                      (context-count ctx)))
+         (add1 n))))))

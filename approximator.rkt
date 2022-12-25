@@ -301,7 +301,13 @@
      (check-equal? (length (next-y (context (make-sums '(1 2) '(1 4)) '(1 2) '(1 4) flags 0 0 0) 0))
                    trues)))
 
-  (check-property match-number-of-y))
+  (check-property match-number-of-y)
+
+  (let ([answer (next-y
+                 (context (make-sums '(1 2 3) '(1 4 9)) '(1 2 3) '(1 4 9) '(#f #t #f #f #f #t) 0 0 0)
+                 2)])
+    (check-= (first answer) 4 1e-04)
+    (check-= (second answer) 4 1e-04)))
 
 (module+ main
   (print-header initial-global-context)

@@ -75,21 +75,20 @@
                 (if (eq? x0 x1) y0 (+ y0 (* (/ (- y1 y0) (- x1 x0)) (- x x0))))))))))
 
 (define (make-sums Xs Ys)
-  (let*
-    ([N (length Xs)]
-     [SX (apply + Xs)]
-     [SXX (apply + (map sqr Xs))]
-     [SXXX (apply + (map (lambda (x) (expt x 3)) Xs))]
-     [SXXXX (apply + (map (lambda (x) (expt x 4)) Xs))]
-     [SLnX (apply + (map (lambda (x) (log x)) Xs))]
-     [SLnX2 (apply + (map (lambda (x) (sqr (log x))) Xs))]
-     [SY (apply + Ys)]
-     [SLnY (apply + (map (lambda (y) (log y)) Ys))]
-     [SXLnY (apply + (map (lambda (x y) (* x (log y))) Xs Ys))]
-     [SLnXY (apply + (map (lambda (x y) (* (log x) y)) Xs Ys))]
-     [SXY (apply + (map * Xs Ys))]
-     [SLnXLnY (apply + (map (lambda (x y) (* (log x) (log y))) Xs Ys))]
-     [SXXY (apply + (map (lambda (x y) (* x x y)) Xs Ys))])
+  (let* ([N (length Xs)]
+         [SX (apply + Xs)]
+         [SXX (apply + (map sqr Xs))]
+         [SXXX (apply + (map (lambda (x) (expt x 3)) Xs))]
+         [SXXXX (apply + (map (lambda (x) (expt x 4)) Xs))]
+         [SLnX (apply + (map (lambda (x) (log x)) Xs))]
+         [SLnX2 (apply + (map (lambda (x) (sqr (log x))) Xs))]
+         [SY (apply + Ys)]
+         [SLnY (apply + (map (lambda (y) (log y)) Ys))]
+         [SXLnY (apply + (map (lambda (x y) (* x (log y))) Xs Ys))]
+         [SLnXY (apply + (map (lambda (x y) (* (log x) y)) Xs Ys))]
+         [SXY (apply + (map * Xs Ys))]
+         [SLnXLnY (apply + (map (lambda (x y) (* (log x) (log y))) Xs Ys))]
+         [SXXY (apply + (map (lambda (x y) (* x x y)) Xs Ys))])
     (list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY)))
 
 (define (pretty-print value #:sep [sep ""])
@@ -114,8 +113,7 @@
                           [count #:mutable])
   #:transparent)
 
-(define initial-global-context
-  (context (make-list 14 0) null null (make-list 6 #f) 0 1 +inf.0))
+(define initial-global-context (context (make-list 14 0) null null (make-list 6 #f) 0 1 +inf.0))
 
 (define (next-y ctx x)
   (match-let
@@ -195,9 +193,9 @@
     (pretty-print #:sep ";" "segment"))
   (newline))
 
-
 (module+ test
-  (require rackunit rackcheck)
+  (require rackunit
+           rackcheck)
   ;; tests
   (define X (inclusive-range -500.0 500.0 1.0))
 
@@ -293,22 +291,17 @@
 
   (define gen:list-of-flags
     (gen:let
-      ([a gen:boolean]
-       [b gen:boolean]
-       [c gen:boolean]
-       [d gen:boolean]
-       [e gen:boolean]
-       [f gen:boolean])
-      (list a b c d e f)))
+     ([a gen:boolean] [b gen:boolean] [c gen:boolean] [d gen:boolean] [e gen:boolean] [f gen:boolean])
+     (list a b c d e f)))
 
-  (define-property match-number-of-y
-    ([flags gen:list-of-flags])
-
-    (let ([trues (count identity flags)])
-      (check-equal? (length (next-y (context (make-sums '(1 2) '(1 4)) '(1 2) '(1 4) flags 0 0 0) 0)) trues)))
+  (define-property
+   match-number-of-y
+   ([flags gen:list-of-flags])
+   (let ([trues (count identity flags)])
+     (check-equal? (length (next-y (context (make-sums '(1 2) '(1 4)) '(1 2) '(1 4) flags 0 0 0) 0))
+                   trues)))
 
   (check-property match-number-of-y))
-
 
 (module+ main
   (print-header initial-global-context)

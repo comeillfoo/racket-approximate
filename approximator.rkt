@@ -113,7 +113,7 @@
                           [count #:mutable])
   #:transparent)
 
-(define initial-global-context (context (make-list 14 0) null null (make-list 6 #f) 0 1 +inf.0))
+(define INITIAL-GLOBAL-CONTEXT (context (make-list 14 0) null null (make-list 6 #f) 0 1 +inf.0))
 
 (define (next-y ctx x)
   (match-let
@@ -145,35 +145,35 @@
  #:program "approximate"
  #:once-each [("-l" "--linear")
               "Use linear approximation"
-              (set-context-flags! initial-global-context
-                                  (list-set (context-flags initial-global-context) 0 #t))]
+              (set-context-flags! INITIAL-GLOBAL-CONTEXT
+                                  (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 0 #t))]
  [("-q" "--quadratic")
   "Use quadratic approximation"
-  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 1 #t))]
+  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 1 #t))]
  [("-e" "--exponent")
   "Use exponential approximation"
-  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 2 #t))]
+  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 2 #t))]
  [("-g" "--logarithm")
   "Use logarithmic approximation"
-  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 3 #t))]
+  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 3 #t))]
  [("-p" "--power")
   "Use power approximation"
-  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 4 #t))]
+  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 4 #t))]
  [("-s" "--segment")
   "Use segment approximation"
-  (set-context-flags! initial-global-context (list-set (context-flags initial-global-context) 5 #t))]
+  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 5 #t))]
  [("--step")
   raw-step
   "Step between yielded X, default 1"
-  (set-context-step! initial-global-context (string->number raw-step))]
+  (set-context-step! INITIAL-GLOBAL-CONTEXT (string->number raw-step))]
  [("--start")
   raw-start
   "Starting X, default 0"
-  (set-context-start! initial-global-context (string->number raw-start))]
+  (set-context-start! INITIAL-GLOBAL-CONTEXT (string->number raw-start))]
  [("-c" "--count")
   raw-count
   "Number of approximated x, default +inf.0"
-  (set-context-count! initial-global-context (string->number raw-count))]
+  (set-context-count! INITIAL-GLOBAL-CONTEXT (string->number raw-count))]
  #:args ()
  (void))
 
@@ -310,18 +310,18 @@
     (check-= (second answer) 4 1e-04)))
 
 (module+ main
-  (print-header initial-global-context)
+  (print-header INITIAL-GLOBAL-CONTEXT)
   (let*-values ([(more? get) (sequence-generate table)])
 
     ;;; accums
     ;;; looped-structure
-    (for/fold ([ctx initial-global-context] [n 0] #:result (void))
-              ([x0 (in-generator (let loop ([x (- (context-start initial-global-context)
-                                                  (* 2 (context-step initial-global-context)))])
+    (for/fold ([ctx INITIAL-GLOBAL-CONTEXT] [n 0] #:result (void))
+              ([x0 (in-generator (let loop ([x (- (context-start INITIAL-GLOBAL-CONTEXT)
+                                                  (* 2 (context-step INITIAL-GLOBAL-CONTEXT)))])
                                    (begin
                                      (yield x)
-                                     (loop (+ x (context-step initial-global-context))))))]
-               #:break (>= n (context-count initial-global-context)))
+                                     (loop (+ x (context-step INITIAL-GLOBAL-CONTEXT))))))]
+               #:break (>= n (context-count INITIAL-GLOBAL-CONTEXT)))
 
       (match-let ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY)
                    (context-sums ctx)])

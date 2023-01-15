@@ -113,9 +113,9 @@
                           [count #:mutable])
   #:transparent)
 
-(define INITIAL-GLOBAL-CONTEXT (context (make-list 14 0) null null (make-list 6 #f) 0 1 +inf.0))
+(define INITIAL-CONTEXT (context (make-list 14 0) null null (make-list 6 #f) 0 1 +inf.0))
 
-(define (next-y ctx x)
+(define (next-approximation ctx x)
   (match-let
       ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY) (context-sums ctx)]
        [(list linear? quadratic? exponential? logarithmic? power? segment?) (context-flags ctx)])
@@ -145,35 +145,34 @@
  #:program "approximate"
  #:once-each [("-l" "--linear")
               "Use linear approximation"
-              (set-context-flags! INITIAL-GLOBAL-CONTEXT
-                                  (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 0 #t))]
+              (set-context-flags! INITIAL-CONTEXT (list-set (context-flags INITIAL-CONTEXT) 0 #t))]
  [("-q" "--quadratic")
   "Use quadratic approximation"
-  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 1 #t))]
+  (set-context-flags! INITIAL-CONTEXT (list-set (context-flags INITIAL-CONTEXT) 1 #t))]
  [("-e" "--exponent")
   "Use exponential approximation"
-  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 2 #t))]
+  (set-context-flags! INITIAL-CONTEXT (list-set (context-flags INITIAL-CONTEXT) 2 #t))]
  [("-g" "--logarithm")
   "Use logarithmic approximation"
-  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 3 #t))]
+  (set-context-flags! INITIAL-CONTEXT (list-set (context-flags INITIAL-CONTEXT) 3 #t))]
  [("-p" "--power")
   "Use power approximation"
-  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 4 #t))]
+  (set-context-flags! INITIAL-CONTEXT (list-set (context-flags INITIAL-CONTEXT) 4 #t))]
  [("-s" "--segment")
   "Use segment approximation"
-  (set-context-flags! INITIAL-GLOBAL-CONTEXT (list-set (context-flags INITIAL-GLOBAL-CONTEXT) 5 #t))]
+  (set-context-flags! INITIAL-CONTEXT (list-set (context-flags INITIAL-CONTEXT) 5 #t))]
  [("--step")
   raw-step
   "Step between yielded X, default 1"
-  (set-context-step! INITIAL-GLOBAL-CONTEXT (string->number raw-step))]
+  (set-context-step! INITIAL-CONTEXT (string->number raw-step))]
  [("--start")
   raw-start
   "Starting X, default 0"
-  (set-context-start! INITIAL-GLOBAL-CONTEXT (string->number raw-start))]
+  (set-context-start! INITIAL-CONTEXT (string->number raw-start))]
  [("-c" "--count")
   raw-count
   "Number of approximated x, default +inf.0"
-  (set-context-count! INITIAL-GLOBAL-CONTEXT (string->number raw-count))]
+  (set-context-count! INITIAL-CONTEXT (string->number raw-count))]
  #:args ()
  (void))
 
@@ -298,30 +297,31 @@
    match-number-of-y
    ([flags gen:list-of-flags])
    (let ([trues (count identity flags)])
-     (check-equal? (length (next-y (context (make-sums '(1 2) '(1 4)) '(1 2) '(1 4) flags 0 0 0) 0))
-                   trues)))
+     (check-equal?
+      (length (next-approximation (context (make-sums '(1 2) '(1 4)) '(1 2) '(1 4) flags 0 0 0) 0))
+      trues)))
 
   (check-property match-number-of-y)
 
-  (let ([answer (next-y
+  (let ([answer (next-approximation
                  (context (make-sums '(1 2 3) '(1 4 9)) '(1 2 3) '(1 4 9) '(#f #t #f #f #f #t) 0 0 0)
                  2)])
     (check-= (first answer) 4 1e-04)
     (check-= (second answer) 4 1e-04)))
 
 (module+ main
-  (print-header INITIAL-GLOBAL-CONTEXT)
+  (print-header INITIAL-CONTEXT)
   (let*-values ([(more? get) (sequence-generate table)])
 
     ;;; accums
     ;;; looped-structure
-    (for/fold ([ctx INITIAL-GLOBAL-CONTEXT] [n 0] #:result (void))
-              ([x0 (in-generator (let loop ([x (- (context-start INITIAL-GLOBAL-CONTEXT)
-                                                  (* 2 (context-step INITIAL-GLOBAL-CONTEXT)))])
+    (for/fold ([ctx INITIAL-CONTEXT] [n 0] #:result (void))
+              ([x0 (in-generator (let loop ([x (- (context-start INITIAL-CONTEXT)
+                                                  (* 2 (context-step INITIAL-CONTEXT)))])
                                    (begin
                                      (yield x)
-                                     (loop (+ x (context-step INITIAL-GLOBAL-CONTEXT))))))]
-               #:break (>= n (context-count INITIAL-GLOBAL-CONTEXT)))
+                                     (loop (+ x (context-step INITIAL-CONTEXT))))))]
+               #:break (>= n (context-count INITIAL-CONTEXT)))
 
       (match-let ([(list N SX SXX SXXX SXXXX SLnX SLnX2 SY SLnY SXLnY SLnXY SXY SLnXLnY SXXY)
                    (context-sums ctx)])
@@ -330,7 +330,7 @@
           ;;; body
           (pretty-print x0)
 
-          (for ([y (next-y ctx x0)])
+          (for ([y (next-approximation ctx x0)])
             (pretty-print #:sep ";" y))
           (newline))
 
